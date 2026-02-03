@@ -1,6 +1,9 @@
-import { getCarById } from '@/actions/car-listing';
+import { cache } from 'react';
+import { getCarById as getCarByIdRaw } from '@/actions/car-listing';
 import { CarDetails } from './_components/car-details';
 import { notFound } from 'next/navigation';
+
+const getCarById = cache(getCarByIdRaw);
 
 export async function generateMetadata({ params }) {
 	const { id } = await params;

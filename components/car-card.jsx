@@ -18,6 +18,7 @@ export const CarCard = ({ car }) => {
 	const { isSignedIn } = useAuth();
 	const router = useRouter();
 	const [isSaved, setIsSaved] = useState(car.wishlisted);
+	const carHref = `/cars/${car.id}`;
 
 	// Use the useFetch hook
 	const {
@@ -139,10 +140,15 @@ export const CarCard = ({ car }) => {
 				<div className='flex justify-between'>
 					<Button
 						className='flex-1'
-						onClick={() => {
-							router.push(`/cars/${car.id}`);
-						}}>
-						View Car
+						asChild>
+						<Link
+							href={carHref}
+							prefetch
+							onMouseEnter={() => router.prefetch(carHref)}
+							onFocus={() => router.prefetch(carHref)}
+							onTouchStart={() => router.prefetch(carHref)}>
+							View Car
+						</Link>
 					</Button>
 				</div>
 			</CardContent>

@@ -266,18 +266,21 @@ export async function getCarById(carId) {
   try {
     // Get current user if authenticated
     const { userId } = await auth();
-    let dbUser = null;
-
-    if (userId) {
-      dbUser = await db.user.findUnique({
-        where: { clerkUserId: userId },
-      });
-    }
-
-    // Get car details
-    const car = await db.car.findUnique({
-      where: { id: carId },
-    });
+    const [car, dbUser, dealership] = await Promise.all([
+      db.car.findUnique({
+        where: { id: carId },
+      }),
+      userId
+        ? db.user.findUnique({
+            where: { clerkUserId: userId },
+          })
+        : Promise.resolve(null),
+      db.dealershipInfo.findFirst({
+        include: {
+          workingHours: true,
+        },
+      }),
+    ]);
 
     if (!car) {
       return {
@@ -288,47 +291,40 @@ export async function getCarById(carId) {
 
     // Check if car is wishlisted by user
     let isWishlisted = false;
-    if (dbUser) {
-      const savedCar = await db.userSavedCar.findUnique({
-        where: {
-          userId_carId: {
-            userId: dbUser.id,
-            carId,
-          },
-        },
-      });
-
-      isWishlisted = !!savedCar;
-    }
-
-    // Check if user has already booked a test drive for this car
-    const existingTestDrive = await db.testDriveBooking.findFirst({
-      where: {
-        carId,
-        userId: dbUser.id,
-        status: { in: ["PENDING", "CONFIRMED", "COMPLETED"] },
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
-
     let userTestDrive = null;
 
-    if (existingTestDrive) {
-      userTestDrive = {
-        id: existingTestDrive.id,
-        status: existingTestDrive.status,
-        bookingDate: existingTestDrive.bookingDate.toISOString(),
-      };
-    }
+    if (dbUser) {
+      const [savedCar, existingTestDrive] = await Promise.all([
+        db.userSavedCar.findUnique({
+          where: {
+            userId_carId: {
+              userId: dbUser.id,
+              carId,
+            },
+          },
+        }),
+        db.testDriveBooking.findFirst({
+          where: {
+            carId,
+            userId: dbUser.id,
+            status: { in: ["PENDING", "CONFIRMED", "COMPLETED"] },
+          },
+          orderBy: {
+            createdAt: "desc",
+          },
+        }),
+      ]);
 
-    // Get dealership info for test drive availability
-    const dealership = await db.dealershipInfo.findFirst({
-      include: {
-        workingHours: true,
-      },
-    });
+      isWishlisted = !!savedCar;
+
+      if (existingTestDrive) {
+        userTestDrive = {
+          id: existingTestDrive.id,
+          status: existingTestDrive.status,
+          bookingDate: existingTestDrive.bookingDate.toISOString(),
+        };
+      }
+    }
 
     return {
       success: true,

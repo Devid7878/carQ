@@ -1,6 +1,8 @@
 import { Inter } from 'next/font/google';
+import { Suspense } from 'react';
 import './globals.css';
 import Header from '@/components/header';
+import HeaderLoading from '@/components/header-loading';
 import { ClerkProvider } from '@clerk/nextjs';
 import { Toaster } from 'sonner';
 
@@ -23,7 +25,9 @@ export default function RootLayout({ children }) {
 					/>
 				</head>
 				<body className={`${inter.className}`}>
-					<Header />
+					<Suspense fallback={<HeaderLoading />}>
+						<Header />
+					</Suspense>
 					<main className='min-h-screen'>{children}</main>
 					<Toaster richColors />
 
