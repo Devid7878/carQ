@@ -2,7 +2,7 @@
 
 import { useCallback, useState, useEffect } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
-import { Filter, X, Sliders } from "lucide-react";
+import { Filter, X, Sliders, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -51,6 +51,7 @@ export const CarFilters = ({ filters }) => {
   ]);
   const [sortBy, setSortBy] = useState(currentSortBy);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [isApplying, setIsApplying] = useState(false);
 
   // Update local state when URL parameters change
   useEffect(() => {
@@ -60,6 +61,7 @@ export const CarFilters = ({ filters }) => {
     setTransmission(currentTransmission);
     setPriceRange([currentMinPrice, currentMaxPrice]);
     setSortBy(currentSortBy);
+    setIsApplying(false);
   }, [
     currentMake,
     currentBodyType,
@@ -82,6 +84,7 @@ export const CarFilters = ({ filters }) => {
 
   // Update URL when filters change
   const applyFilters = useCallback(() => {
+    setIsApplying(true);
     const params = new URLSearchParams();
 
     if (make) params.set("make", make);
@@ -116,6 +119,7 @@ export const CarFilters = ({ filters }) => {
     searchParams,
     filters.priceRange.min,
     filters.priceRange.max,
+    router,
   ]);
 
   // Handle filter changes
@@ -216,11 +220,24 @@ export const CarFilters = ({ filters }) => {
                   variant="outline"
                   onClick={clearFilters}
                   className="flex-1"
+                  disabled={isApplying}
                 >
                   Reset
                 </Button>
-                <Button type="button" onClick={applyFilters} className="flex-1">
-                  Show Results
+                <Button
+                  type="button"
+                  onClick={applyFilters}
+                  className="flex-1"
+                  disabled={isApplying}
+                >
+                  {isApplying ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Applying...
+                    </>
+                  ) : (
+                    "Show Results"
+                  )}
                 </Button>
               </SheetFooter>
             </SheetContent>
@@ -283,8 +300,19 @@ export const CarFilters = ({ filters }) => {
           </div>
 
           <div className="px-4 py-4 border-t">
-            <Button onClick={applyFilters} className="w-full">
-              Apply Filters
+            <Button
+              onClick={applyFilters}
+              className="w-full"
+              disabled={isApplying}
+            >
+              {isApplying ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Applying...
+                </>
+              ) : (
+                "Apply Filters"
+              )}
             </Button>
           </div>
         </div>
